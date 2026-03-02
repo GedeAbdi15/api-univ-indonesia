@@ -141,6 +141,7 @@ const RootQueryType = new GraphQLObjectType({
         },
       },
       resolve: (parent, { saring, cari, awal, jumlah }) => {
+        const escapedCari = cari ? _.escapeRegExp(cari) : null;
         return _(dataPT)
           .filter((obj) => {
             if (_.isEmpty(saring)) return true;
@@ -149,17 +150,11 @@ const RootQueryType = new GraphQLObjectType({
             });
           })
           .filter((obj) => {
-            if (cari) {
-              let found;
-              _.forEach(obj, (v, k, c) => {
-                if (new RegExp(cari, "i").test(v)) {
-                  found = true;
-                  return false; // exit loop
-                }
-              });
-              if (found) return true;
-            }
-            return true;
+            if (!escapedCari) return true;
+            return _.some(obj, (v) => {
+              if (v === null || v === undefined) return false;
+              return new RegExp(escapedCari, "i").test(String(v));
+            });
           })
           .slice(awal ?? 0, (awal ?? 0) + (jumlah ?? dataPT.length));
       },
